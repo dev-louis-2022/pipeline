@@ -1,0 +1,21 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 645626616837.dkr.ecr.ap-northeast-2.amazonaws.com
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t pipeline-first .
+      - docker tag pipeline-first:latest 645626616837.dkr.ecr.ap-northeast-2.amazonaws.com/pipeline-first:latest
+  post_build:
+    commands:
+      - echo Pushing the Docker image...
+      - docker push 645626616837.dkr.ecr.ap-northeast-2.amazonaws.com/pipeline-first:latest
+      - echo Writing image definitions file...
+      - printf '[{"name":"container_name","imageUri":"%s.dkr.ecr.%s.amazonaws.com/%s:latest"}]' $AWS_ACCOUNT_ID $AWS_DEFAULT_REGION $REPOSITORY_NAME > imagedefinitions.json
+artifacts:
+  files: imagedefinitions.json
